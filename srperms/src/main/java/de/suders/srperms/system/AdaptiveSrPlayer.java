@@ -2,6 +2,7 @@ package de.suders.srperms.system;
 
 import java.util.Map;
 
+import de.suders.srperms.system.object.SrPlayerGroup;
 import lombok.NonNull;
 
 /**

@@ -2,3 +2,4 @@ name: SrPermissions
 version: 1.0.0
 author: SrSuders
 main: de.suders.srperms.MainSrPerms
+commands:

@@ -1,9 +1,10 @@
-package de.suders.srperms.system;
+package de.suders.srperms.system.object;
 
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 import org.mongodb.morphia.annotations.Reference;
 
+import de.suders.srperms.system.AdaptiveSrPlayerGroup;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,18 +13,22 @@ import lombok.Setter;
 * Date: 18.07.2021
 * Project: srperms
 */
-@Entity
+@Entity(value = "SrPlayerGroup", noClassnameStored = true)
 public class SrPlayerGroup implements AdaptiveSrPlayerGroup {
 	@Id @Getter
 	private String identifier;
 	@Getter @Setter
 	private long startTime, expirationTime;
 	@Reference @Getter
-	private AdaptiveSrGroup group;
+	private SrGroup group;
 	@Reference @Getter
-	private AdaptiveSrPlayer player;
+	private SrPlayer player;
 
-	public SrPlayerGroup(final String identifier, final long startTime, final long expirationTime, final AdaptiveSrGroup group, final AdaptiveSrPlayer player) {
+	public SrPlayerGroup() {
+		
+	}
+	
+	public SrPlayerGroup(final String identifier, final long startTime, final long expirationTime, final SrGroup group, final SrPlayer player) {
 		this.identifier = identifier;
 		this.startTime = startTime;
 		this.expirationTime = expirationTime;

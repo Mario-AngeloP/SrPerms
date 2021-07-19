@@ -15,11 +15,11 @@
 	</developers>
 	<properties>
 		<author>SrSuders</author>
-		<mainClass>de.suders.srperms.SrPerms</mainClass>
+		<mainClass>de.suders.srperms.MainSrPerms</mainClass>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 	<build>
-		<finalName>ChestLink</finalName>
+		<finalName>SrPerms</finalName>
 		<sourceDirectory>src/main/java</sourceDirectory>
 		<resources>
 			<resource>
@@ -43,6 +43,9 @@
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<configuration>
+				<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
 					<outputDirectory>target</outputDirectory>
 				</configuration>
 				<executions>

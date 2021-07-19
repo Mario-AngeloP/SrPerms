@@ -5,8 +5,8 @@ import java.util.UUID;
 import de.suders.srperms.system.AdaptiveSrGroup;
 import de.suders.srperms.system.AdaptiveSrPlayer;
 import de.suders.srperms.system.GroupManager;
-import de.suders.srperms.system.SrGroup;
-import de.suders.srperms.system.SrPlayerGroup;
+import de.suders.srperms.system.object.SrGroup;
+import de.suders.srperms.system.object.SrPlayerGroup;
 import de.suders.srperms.utils.UUIDUtils;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -44,10 +44,12 @@ public class SrPerms extends Command {
 					final AdaptiveSrGroup group = GroupManager.getGroup(args[1]);
 					if(groupCheck(group, sender)) return;
 					final StringBuilder stringBuilder = new StringBuilder();
-					for(AdaptiveSrGroup subGroup : group.getSubGroups()) 
-						stringBuilder.append("§c" + subGroup.getIdentifier() + "§7, ");
+					if(group.getSubGroups() != null) 
+						for(AdaptiveSrGroup subGroup : group.getSubGroups()) 
+							stringBuilder.append("§c" + subGroup.getIdentifier() + "§7, ");
 					String subGroups = stringBuilder.toString();
-					subGroups = subGroups.substring(0, subGroups.length()-4);
+					if(!subGroups.equalsIgnoreCase(""))
+						subGroups = subGroups.substring(0, subGroups.length()-4);
 					sender.sendMessage(prefix + "\n"
 							+ "Name: §c" + group.getIdentifier() + "\n"
 							+ "§7Members: §c" + group.getMembers().size() + "\n"
@@ -59,7 +61,7 @@ public class SrPerms extends Command {
 						sender.sendMessage(prefix + "§cDie Gruppe existiert bereits.");
 						return;
 					}
-					GroupManager.addGroup(new SrGroup(prefix));
+					GroupManager.addGroup(new SrGroup(args[1]));
 					sender.sendMessage(prefix + "Du hast erfolgreich die Gruppe §e" + args[1] + " §7erstellt");
 					return;
 				} else if(args[2].equalsIgnoreCase("delete")) {
@@ -79,7 +81,7 @@ public class SrPerms extends Command {
 					sender.sendMessage(prefix + "§cDu hast die Gruppe §e" + args[1] + " §cauf §c§ldefault §cgestellt.");
 					return;
 				}
-			} else if(args[0].equalsIgnoreCase("player")) {
+			} else if(args[0].equalsIgnoreCase("user")) {
 				if(args[2].equalsIgnoreCase("info")) {
 					final UUID uuid = UUIDUtils.getUUID(args[1]);
 					if(uuid == null) {
@@ -106,11 +108,38 @@ public class SrPerms extends Command {
 					if(groupCheck(group, sender)) return;
 					if(args[2].equalsIgnoreCase("add"))
 						group.addPermission(args[3].toLowerCase());
-					else group.removePermission(prefix);
+					else group.removePermission(args[3].toLowerCase());
 					sender.sendMessage(prefix + "§cDu hast erfolgreich " + args[3] + " die Rechte " + (args[3].equalsIgnoreCase("add") ? "hinzugefügt" : "entfernt") + ".");
 					return;
+				} else if(args[2].equalsIgnoreCase("addsubgroup") || args[2].equalsIgnoreCase("removesubgroup")) {
+					if(args[1].equalsIgnoreCase(args[3])) {
+						sender.sendMessage(prefix + "§cDie SubGruppe und die gewählte Gruppe können nicht die Gleiche sein.");
+						return;
+					}
+					final AdaptiveSrGroup group = GroupManager.getGroup(args[1]);
+					if(groupCheck(group, sender)) return;
+					final AdaptiveSrGroup subGroup = GroupManager.getGroup(args[3]);
+					if(groupCheck(subGroup, sender)) return;
+					boolean alreadyIn = group.getSubGroups().contains(subGroup);
+					
+					if(args[2].equalsIgnoreCase("addsubgroup")) 
+						if(!alreadyIn)
+							group.addSubGroup(subGroup);
+						else {
+							sender.sendMessage(prefix + "§cDie Gruppe ist bereits eine Sub-Gruppe.");
+							return;
+						}
+					 else 
+						if(alreadyIn) 
+							group.removeSubGroup(subGroup);
+						else {
+							sender.sendMessage(prefix + "§cDie ausgewählte Sub-Gruppe ist bereits keine Sub-Gruppe.");
+							return;
+						}
+					sender.sendMessage(prefix + "Du hast die Sub-Gruppe erfolgreich der Gruppe " + (args[2].equalsIgnoreCase("addsubgroup") ? "hinzugefügt" : "entfernt") + ".");
+					return;
 				}
-			} else if(args[0].equalsIgnoreCase("player")) {
+			} else if(args[0].equalsIgnoreCase("user")) {
 				if(args[2].equalsIgnoreCase("add") || args[2].equalsIgnoreCase("remove")) {
 					final UUID uuid = UUIDUtils.getUUID(args[1]);
 					if(uuid == null) {
@@ -122,7 +151,7 @@ public class SrPerms extends Command {
 						player.addPermision(args[3].toLowerCase());
 					else 
 						player.removePermission(args[3].toLowerCase());
-					sender.sendMessage(prefix + "§cDu hast erfolgreich " + args[3] + " die Rechte " + (args[3].equalsIgnoreCase("add") ? "hinzugefügt" : "entfernt") + ".");
+					sender.sendMessage(prefix + "§cDu hast erfolgreich " + args[3] + " die Rechte " + (args[2].equalsIgnoreCase("add") ? "hinzugefügt" : "entfernt") + ".");
 					return;
 				} else if(args[2].equalsIgnoreCase("addgroup")) {
 					final UUID uuid = UUIDUtils.getUUID(args[1]);
@@ -165,7 +194,7 @@ public class SrPerms extends Command {
 					player.removeGroup(group.getIdentifier());
 					group.getMembers().remove(player.getUniqueId());
 					if(player.getGroups().isEmpty() || player.getGroups().size() == 0) 
-						player.addGroup(GroupManager.getDefaultGroup(), -1L);
+						player.addGroup(GroupManager.getDefaultGroupName(), -1L);
 					sender.sendMessage(prefix + "§cDu hast den Spieler erfolgreich aus der Gruppe entfernt.");
 					return;
 				}
@@ -183,8 +212,11 @@ public class SrPerms extends Command {
 				+ "/srperms group <group> create\n"
 				+ "/srperms group <group> delete\n"
 				+ "/srperms group <group> setdefault\n"
-				+ "/srperms group <group> add/remove <permision>"
-				+ "/srperms player <player> add/remove <permission>");
+				+ "/srperms group <group> add/remove <permision>\n"
+				+ "/srperms user <player> add/remove <permission>\n"
+				+ "/srperms user <player> addgroup/setgroup/removegroup <group>\n"
+				+ "/srperms user <player> info\n"
+				+ "/srperms save");
 	}
 	
 	@SuppressWarnings("deprecation")

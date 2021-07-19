@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.UUID;
 
 import de.suders.srperms.io.ConfigReader;
-import de.suders.srperms.io.MongoDB;
+import de.suders.srperms.system.MongoDB;
 import lombok.Getter;
 import lombok.Setter;
 

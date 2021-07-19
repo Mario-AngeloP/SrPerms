@@ -1,4 +1,4 @@
-package de.suders.srperms.system;
+package de.suders.srperms.system.object;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,6 +11,9 @@ import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 
 import de.suders.srperms.storage.Data;
+import de.suders.srperms.system.AdaptiveSrPlayer;
+import de.suders.srperms.system.AdaptiveSrPlayerGroup;
+import de.suders.srperms.system.GroupManager;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -28,6 +31,11 @@ public class SrPlayer implements AdaptiveSrPlayer {
 	@Getter @Embedded
 	private List<String> permissions;
 	
+	public SrPlayer() {
+		this.groups = new HashMap<>();
+		this.permissions = new ArrayList<>();
+	}
+	
 	public SrPlayer(@NonNull final UUID uuid) {
 		this.uuid = uuid.toString();
 		this.groups = new HashMap<>();
@@ -39,16 +47,18 @@ public class SrPlayer implements AdaptiveSrPlayer {
 	}
 	
 	public void save() {
-		Data.getInstance().getMongoDB().getPlayersData().save(this);
+		Data.getInstance().getMongoDB().getDatastore().findAndDelete(Data.getInstance().getMongoDB().getDatastore().createQuery(SrPlayer.class).field("_id").equal(uuid));
+		Data.getInstance().getMongoDB().getDatastore().save(this);
 	}
 	
 	public void addGroup(@NonNull final String name, long expriationTime) {
 		if(groups.containsKey(name.toLowerCase())) return;
-		final AdaptiveSrGroup group = GroupManager.getGroup(name.toLowerCase());
+		final SrGroup group = (SrGroup) GroupManager.getGroup(name.toLowerCase());
 		final SrPlayer player = this;
 		if(!group.getMembers().contains(this.uuid)) 
 			group.getMembers().add(this.uuid);
 		groups.put(name.toLowerCase(), new SrPlayerGroup(name, System.currentTimeMillis(), expriationTime, group, player));
+		save();
 	}
 	
 	public void changeExpirationTimeOfGroup(@NonNull final String name, long expirationTime) {
@@ -57,11 +67,14 @@ public class SrPlayer implements AdaptiveSrPlayer {
 		if(!group.getGroup().getMembers().contains(this.uuid)) 
 			group.getGroup().getMembers().add(this.uuid);
 		group.setExpirationTime(expirationTime);
+		save();
 	}
 	
 	public void removeGroup(@NonNull final String name) {
-		if(groups.containsKey(name.toLowerCase())) 
+		if(groups.containsKey(name.toLowerCase())) {
 			groups.remove(name.toLowerCase());
+			save();
+		}
 	}
 
 	@Override
@@ -71,8 +84,10 @@ public class SrPlayer implements AdaptiveSrPlayer {
 
 	@Override
 	public void addPermision(String permission) {
-		if(!permissions.contains(permission.toLowerCase())) 
+		if(!permissions.contains(permission.toLowerCase())) {
 			permissions.add(permission.toLowerCase());
+			save();
+		}
 	}
 
 	@Override
@@ -89,7 +104,9 @@ public class SrPlayer implements AdaptiveSrPlayer {
 
 	@Override
 	public void removePermission(String permission) {
-		if(permissions.contains(permission.toLowerCase())) 
+		if(permissions.contains(permission.toLowerCase())) {
 			permissions.remove(permission.toLowerCase());
+			save();
+		}
 	}
 }
